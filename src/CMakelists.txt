@@ -1,0 +1,11 @@
+function(shader_compile SHADER_SOURCE)
+
+execute_process(
+    COMMAND python shader_to_hex_array.py ${SHADER_SOURCE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+endfunction(shader_compile)
+
+shader_compile("shader/fill.vert")
+shader_compile("shader/fill.frag")
+shader_compile("shader/fill_edge_aa.frag")

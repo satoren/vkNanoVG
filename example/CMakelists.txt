@@ -1,0 +1,39 @@
+cmake_minimum_required(VERSION 3.7.2)
+
+find_package(Vulkan REQUIRED)
+
+include_directories(${Vulkan_INCLUDE_DIRS})
+
+# Download and unpack glfw at configure time
+configure_file(CMakelists.txt.glfw.in glfw-download/CMakeLists.txt)
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/glfw-download )
+if(result)
+  message(FATAL_ERROR "CMake step for glfw failed: ${result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/glfw-download )
+if(result)
+  message(FATAL_ERROR "Build step for glfw failed: ${result}")
+endif()
+
+# Add glfw directly to our build. This defines
+add_subdirectory(${CMAKE_BINARY_DIR}/glfw-src
+                 ${CMAKE_BINARY_DIR}/glfw-build)
+
+set(NANOVG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../nanovg)
+include_directories(${NANOVG_SOURCE_DIR}/src/)
+add_library(nanovg STATIC ${NANOVG_SOURCE_DIR}/src/nanovg.c)
+
+#remove opengl dependency from perf.c
+add_definitions(-DGL_QUERY_RESULT_AVAILABLE=0 -DglBeginQuery=NVG_NOTUSED -DglEndQuery=NVG_NOTUSED -DglGetQueryObjectiv=NVG_NOTUSED)
+
+include_directories(${NANOVG_SOURCE_DIR}/example/)
+add_executable(example_vulkan example_vulkan.c ${NANOVG_SOURCE_DIR}/example/demo.c ${NANOVG_SOURCE_DIR}/example/perf.c)
+target_link_libraries(example_vulkan glfw nanovg ${Vulkan_LIBRARIES})
+
+
+add_executable(example_vulkancpp example_vulkancpp.cpp ${NANOVG_SOURCE_DIR}/example/demo.c ${NANOVG_SOURCE_DIR}/example/perf.c)
+target_link_libraries(example_vulkancpp glfw nanovg ${Vulkan_LIBRARIES})
