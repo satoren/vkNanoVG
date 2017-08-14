@@ -14,11 +14,10 @@ enum NVGcreateFlags {
 };
 
 typedef struct VKNVGCreateInfo {
+  VkPhysicalDevice gpu;
   VkDevice device;
   VkRenderPass renderpass;
   VkCommandBuffer cmd_buffer;
-  VkPhysicalDeviceProperties physical_device_properties;
-  VkPhysicalDeviceMemoryProperties memory_properties;
 
   const VkAllocationCallbacks *allocator; //Allocator for vulkan. can be null
 } VKNVGCreateInfo;
@@ -148,7 +147,9 @@ typedef struct VKNVGDepthSimplePipeline {
 typedef struct VKNVGcontext {
   VKNVGCreateInfo create_info;
 
-  VkCommandBuffer cmd_buffer;
+
+  VkPhysicalDeviceProperties physical_device_properties;
+  VkPhysicalDeviceMemoryProperties memory_properties;
 
   int fragSize;
   int flags;
@@ -925,7 +926,7 @@ static void vknvg_fill(VKNVGcontext *vk, VKNVGcall *call) {
   int i, npaths = call->pathCount;
 
   VkDevice device = vk->create_info.device;
-  VkCommandBuffer cmd_buffer = vk->cmd_buffer;
+  VkCommandBuffer cmd_buffer = vk->create_info.cmd_buffer;
 
   VKNVGCreatePipelineKey pipelinekey = {0};
   pipelinekey.compositOperation = call->compositOperation;
@@ -987,7 +988,7 @@ static void vknvg_convexFill(VKNVGcontext *vk, VKNVGcall *call) {
   int npaths = call->pathCount;
 
   VkDevice device = vk->create_info.device;
-  VkCommandBuffer cmd_buffer = vk->cmd_buffer;
+  VkCommandBuffer cmd_buffer = vk->create_info.cmd_buffer;
 
   VKNVGCreatePipelineKey pipelinekey = {0};
   pipelinekey.compositOperation = call->compositOperation;
@@ -1025,7 +1026,7 @@ static void vknvg_convexFill(VKNVGcontext *vk, VKNVGcall *call) {
 
 static void vknvg_stroke(VKNVGcontext *vk, VKNVGcall *call) {
   VkDevice device = vk->create_info.device;
-  VkCommandBuffer cmd_buffer = vk->cmd_buffer;
+  VkCommandBuffer cmd_buffer = vk->create_info.cmd_buffer;
 
   VKNVGpath *paths = &vk->paths[call->pathOffset];
   int npaths = call->pathCount;
@@ -1102,7 +1103,7 @@ static void vknvg_triangles(VKNVGcontext *vk, VKNVGcall *call) {
     return;
   }
   VkDevice device = vk->create_info.device;
-  VkCommandBuffer cmd_buffer = vk->cmd_buffer;
+  VkCommandBuffer cmd_buffer = vk->create_info.cmd_buffer;
 
   VKNVGCreatePipelineKey pipelinekey = {0};
   pipelinekey.compositOperation = call->compositOperation;
@@ -1131,6 +1132,9 @@ static int vknvg_renderCreate(void *uptr) {
   VkRenderPass renderpass = vk->create_info.renderpass;
   const VkAllocationCallbacks *allocator = vk->create_info.allocator;
 
+  vkGetPhysicalDeviceMemoryProperties(vk->create_info.gpu, &vk->memory_properties);
+  vkGetPhysicalDeviceProperties(vk->create_info.gpu, &vk->physical_device_properties);
+
   static const unsigned char fill_vert_shader[] = {
 #include "shader/fill_vert_shader_hex.txt"
   };
@@ -1145,7 +1149,7 @@ static int vknvg_renderCreate(void *uptr) {
   vk->fill_vert_shader = vknvg_createShaderModule(device, fill_vert_shader, sizeof(fill_vert_shader), allocator);
   vk->fill_frag_shader = vknvg_createShaderModule(device, fill_frag_shader, sizeof(fill_frag_shader), allocator);
   vk->fill_frag_shader_aa = vknvg_createShaderModule(device, fill_frag_shader_aa, sizeof(fill_frag_shader_aa), allocator);
-  int align = vk->create_info.physical_device_properties.limits.minUniformBufferOffsetAlignment;
+  int align = vk->physical_device_properties.limits.minUniformBufferOffsetAlignment;
 
   vk->fragSize = sizeof(VKNVGfragUniforms) + align - sizeof(VKNVGfragUniforms) % align;
 
@@ -1200,7 +1204,7 @@ static int vknvg_renderCreateTexture(void *uptr, int type, int w, int h, int ima
 
   mem_alloc.allocationSize = mem_reqs.size;
 
-  VkResult res = vknvg_memory_type_from_properties(vk->create_info.memory_properties, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &mem_alloc.memoryTypeIndex);
+  VkResult res = vknvg_memory_type_from_properties(vk->memory_properties, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &mem_alloc.memoryTypeIndex);
   assert(res == VK_SUCCESS);
 
   NVGVK_CHECK_RESULT(vkAllocateMemory(device, &mem_alloc, allocator, &mappableMemory));
@@ -1311,9 +1315,9 @@ static void vknvg_renderCancel(void *uptr) {
 static void vknvg_renderFlush(void *uptr) {
   VKNVGcontext *vk = (VKNVGcontext *)uptr;
   VkDevice device = vk->create_info.device;
-  VkCommandBuffer cmd_buffer = vk->cmd_buffer;
+  VkCommandBuffer cmd_buffer = vk->create_info.cmd_buffer;
   VkRenderPass renderpass = vk->create_info.renderpass;
-  VkPhysicalDeviceMemoryProperties memory_properties = vk->create_info.memory_properties;
+  VkPhysicalDeviceMemoryProperties memory_properties = vk->memory_properties;
   const VkAllocationCallbacks *allocator = vk->create_info.allocator;
 
   int i;
@@ -1330,22 +1334,6 @@ static void vknvg_renderFlush(void *uptr) {
     } else {
       vkResetDescriptorPool(device, vk->desc_pool, 0);
     }
-
-    VkViewport viewport;
-    viewport.width = vk->view[0];
-    viewport.height = vk->view[1];
-    viewport.minDepth = (float)0.0f;
-    viewport.maxDepth = (float)1.0f;
-    viewport.x = 0;
-    viewport.y = 0;
-    vkCmdSetViewport(cmd_buffer, 0, 1, &viewport);
-
-    VkRect2D scissor;
-    scissor.extent.width = vk->view[0];
-    scissor.extent.height = vk->view[1];
-    scissor.offset.x = 0;
-    scissor.offset.y = 0;
-    vkCmdSetScissor(cmd_buffer, 0, 1, &scissor);
 
     for (i = 0; i < vk->ncalls; i++) {
       VKNVGcall *call = &vk->calls[i];
@@ -1612,7 +1600,6 @@ NVGcontext *nvgCreateVk(VKNVGCreateInfo create_info, int flags) {
 
   vk->flags = flags;
   vk->create_info = create_info;
-  vk->cmd_buffer = create_info.cmd_buffer;
 
   ctx = nvgCreateInternal(&params);
   if (ctx == nullptr)
@@ -1630,10 +1617,6 @@ void nvgDeleteVk(NVGcontext *ctx) {
   nvgDeleteInternal(ctx);
 }
 
-void nvgvkSetCommandBufferStore(struct NVGcontext *ctx, VkCommandBuffer cmd_buffer) {
-  VKNVGcontext *vk = (struct VKNVGcontext *)nvgInternalParams(ctx)->userPtr;
-  vk->cmd_buffer = cmd_buffer;
-}
 
 #if !defined(__cplusplus) || defined(NANOVG_VK_NO_nullptrPTR)
 #undef nullptr

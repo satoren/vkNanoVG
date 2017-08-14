@@ -813,6 +813,19 @@ void prepareFrame(VkDevice device, VkCommandBuffer cmd_buffer, FrameBuffers *fb)
   rp_begin.pClearValues = clear_values;
 
   vkCmdBeginRenderPass(cmd_buffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+  
+  VkViewport viewport;
+  viewport.width = fb->buffer_size.width;
+  viewport.height = fb->buffer_size.height;
+  viewport.minDepth = (float)0.0f;
+  viewport.maxDepth = (float)1.0f;
+  viewport.x = rp_begin.renderArea.offset.x;
+  viewport.y = rp_begin.renderArea.offset.y;
+  vkCmdSetViewport(cmd_buffer, 0, 1, &viewport);
+
+  VkRect2D scissor = rp_begin.renderArea;
+  vkCmdSetScissor(cmd_buffer, 0, 1, &scissor);
+
 }
 void submitFrame(VkDevice device, VkQueue queue, VkCommandBuffer cmd_buffer, FrameBuffers *fb) {
   VkResult res;
@@ -947,12 +960,12 @@ int main() {
   vkFreeCommandBuffers(device, cmd_pool, 1, &setup_cmd_buffer);
 
   VkCommandBuffer cmd_buffer = createCmdBuffer(device, cmd_pool);
-  VKNVGCreateInfo create_info = {device};
+  VKNVGCreateInfo create_info = {0};
+  create_info.device = device;
+  create_info.gpu = physical_devices_props.gpu;
   create_info.renderpass = fb.render_pass;
-  create_info.memory_properties = physical_devices_props.memory_properties;
-  create_info.physical_device_properties = physical_devices_props.gpu_props;
   create_info.cmd_buffer = cmd_buffer;
-
+  
   NVGcontext *vg = nvgCreateVk(create_info, NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 
   DemoData data;
