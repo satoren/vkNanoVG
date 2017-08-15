@@ -630,6 +630,29 @@ FrameBuffers createFrameBuffers(VkDevice device, VkSurfaceKHR surface, PhysicalD
 
   VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
+
+  uint32_t presentModeCount;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(props.gpu, surface, &presentModeCount, NULL);
+  assert(presentModeCount > 0);
+
+  VkPresentModeKHR* presentModes = malloc(sizeof(VkPresentModeKHR)*presentModeCount);
+  vkGetPhysicalDeviceSurfacePresentModesKHR(props.gpu, surface, &presentModeCount, presentModes);
+
+  for (size_t i = 0; i < presentModeCount; i++)
+  {
+	  if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+	  {
+		  swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+		  break;
+	  }
+	  if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) && (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR))
+	  {
+		  swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+	  }
+  }
+  free(presentModes);
+
+
   VkSurfaceTransformFlagsKHR preTransform;
   if (surfCapabilities.supportedTransforms &
       VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
