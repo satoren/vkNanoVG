@@ -626,8 +626,9 @@ void ExampleBuildCmdBudder(VkCommandBuffer cmd_buffer, int fbindex) {
 
   updateGraph(&exampleData.fps, (float)dt);
 
-  nvgBeginFrame(exampleData.vg, swapchain.displaySize_.width, swapchain.displaySize_.height, 1.0f);
-  renderDemo(exampleData.vg, 0, 0, (float)swapchain.displaySize_.width, (float)swapchain.displaySize_.height, (float)st, 0, &exampleData.data);
+    double pixrate= 1.5;
+  nvgBeginFrame(exampleData.vg, swapchain.displaySize_.width / pixrate, swapchain.displaySize_.height / pixrate, pixrate);
+  renderDemo(exampleData.vg, 0, 0, (float)swapchain.displaySize_.width / pixrate, (float)swapchain.displaySize_.height / pixrate, (float)st, 0, &exampleData.data);
   renderGraph(exampleData.vg, 5, 5, &exampleData.fps);
 
   nvgEndFrame(exampleData.vg);

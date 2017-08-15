@@ -154,9 +154,9 @@ bool ExampleDrawFrame(void) {
 
 
     updateGraph(&exampleData.fps, (float)dt);
-
-    nvgBeginFrame(exampleData.vg, glcontext.width_, glcontext.height_, 1.0f);
-    renderDemo(exampleData.vg, 0, 0, glcontext.width_, glcontext.height_, (float)st, 0, &exampleData.data);
+    double pixrate= 1.5;
+    nvgBeginFrame(exampleData.vg, glcontext.width_  / pixrate , glcontext.height_  / pixrate, pixrate);
+    renderDemo(exampleData.vg, 0, 0, glcontext.width_  / pixrate, glcontext.height_  / pixrate, (float)st, 0, &exampleData.data);
     renderGraph(exampleData.vg, 5, 5, &exampleData.fps);
 
     nvgEndFrame(exampleData.vg);
