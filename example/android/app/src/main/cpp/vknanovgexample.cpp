@@ -400,10 +400,10 @@ void CreateExampleData() {
   vkGetPhysicalDeviceMemoryProperties(device.gpuDevice_, &memoryProperties);
   vkGetPhysicalDeviceProperties(device.gpuDevice_, &gpuProperties);
 
-  VKNVGCreateInfo create_info = {device.device_};
+  VKNVGCreateInfo create_info = {0};
+  create_info.device = device.device_;
+  create_info.gpu = device.gpuDevice_;
   create_info.renderpass = render.renderPass_;
-  create_info.memory_properties = memoryProperties;
-  create_info.physical_device_properties = gpuProperties;
   create_info.cmd_buffer = render.cmdBuffer_[0];
 
   exampleData.vg = nvgCreateVk(create_info, NVG_ANTIALIAS | NVG_STENCIL_STROKES);
@@ -600,6 +600,7 @@ void ExampleBuildCmdBudder(VkCommandBuffer cmd_buffer, int fbindex) {
 
   const VkCommandBufferBeginInfo cmd_buf_info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
   };
   VK_CHECK_RESULT(vkBeginCommandBuffer(cmd_buffer, &cmd_buf_info));
 
@@ -621,6 +622,19 @@ void ExampleBuildCmdBudder(VkCommandBuffer cmd_buffer, int fbindex) {
   rp_begin.renderArea.extent = swapchain.displaySize_;
   rp_begin.clearValueCount = 2;
   rp_begin.pClearValues = clear_values;
+
+
+    VkViewport viewport;
+    viewport.width = rp_begin.renderArea.extent.width;
+    viewport.height =rp_begin.renderArea.extent.height;
+    viewport.minDepth = (float)0.0f;
+    viewport.maxDepth = (float)1.0f;
+    viewport.x = rp_begin.renderArea.offset.x;
+    viewport.y = rp_begin.renderArea.offset.y;
+    vkCmdSetViewport(cmd_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor = rp_begin.renderArea;
+    vkCmdSetScissor(cmd_buffer, 0, 1, &scissor);
 
   vkCmdBeginRenderPass(cmd_buffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
