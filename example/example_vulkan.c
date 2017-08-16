@@ -987,7 +987,7 @@ int main() {
   create_info.device = device;
   create_info.gpu = physical_devices_props.gpu;
   create_info.renderpass = fb.render_pass;
-  create_info.cmd_buffer = cmd_buffer;
+  create_info.cmdBuffer = cmd_buffer;
   
   NVGcontext *vg = nvgCreateVk(create_info, NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 
