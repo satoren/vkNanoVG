@@ -27,7 +27,6 @@ extern "C" {
 NVGcontext *nvgCreateVk(VKNVGCreateInfo createInfo, int flags);
 void nvgDeleteVk(NVGcontext *ctx);
 
-
 #ifdef __cplusplus
 }
 #endif
@@ -145,7 +144,6 @@ typedef struct VKNVGDepthSimplePipeline {
 
 typedef struct VKNVGcontext {
   VKNVGCreateInfo createInfo;
-
 
   VkPhysicalDeviceProperties gpuProperties;
   VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -310,7 +308,7 @@ static int vknvg_compareCreatePipelineKey(const VKNVGCreatePipelineKey *a, const
     return a->stencilTest - b->stencilTest;
   }
   if (a->edgeAA != b->edgeAA) {
-	  return a->edgeAA - b->edgeAA;
+    return a->edgeAA - b->edgeAA;
   }
   if (a->edgeAAShader != b->edgeAAShader) {
     return a->edgeAAShader - b->edgeAAShader;
@@ -444,7 +442,7 @@ static VKNVGBuffer vknvg_createBuffer(VkDevice device, VkPhysicalDeviceMemoryPro
   memcpy(mapped, data, size);
   vkUnmapMemory(device, mem);
   NVGVK_CHECK_RESULT(vkBindBufferMemory(device, buffer, mem, 0));
-  VKNVGBuffer buf = {buffer, mem,mem_alloc.allocationSize};
+  VKNVGBuffer buf = {buffer, mem, mem_alloc.allocationSize};
   return buf;
 }
 
@@ -454,21 +452,18 @@ static void vknvg_destroyBuffer(VkDevice device, const VkAllocationCallbacks *al
   vkFreeMemory(device, buffer->mem, allocator);
 }
 
-static void vknvg_UpdateBuffer(VkDevice device, const VkAllocationCallbacks *allocator, VKNVGBuffer *buffer, VkPhysicalDeviceMemoryProperties memoryProperties,  VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memory_type, void *data, uint32_t size) {
+static void vknvg_UpdateBuffer(VkDevice device, const VkAllocationCallbacks *allocator, VKNVGBuffer *buffer, VkPhysicalDeviceMemoryProperties memoryProperties, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memory_type, void *data, uint32_t size) {
 
-	if (buffer->size < size) {
-		vknvg_destroyBuffer(device, allocator, buffer);
-		*buffer = vknvg_createBuffer(device,memoryProperties,allocator,usage,memory_type,data,size);
-	}
-	else {
-		void *mapped;
-		NVGVK_CHECK_RESULT(vkMapMemory(device, buffer->mem, 0, size, 0, &mapped));
-		memcpy(mapped, data, size);
-		vkUnmapMemory(device, buffer->mem);
-	}
-
+  if (buffer->size < size) {
+    vknvg_destroyBuffer(device, allocator, buffer);
+    *buffer = vknvg_createBuffer(device, memoryProperties, allocator, usage, memory_type, data, size);
+  } else {
+    void *mapped;
+    NVGVK_CHECK_RESULT(vkMapMemory(device, buffer->mem, 0, size, 0, &mapped));
+    memcpy(mapped, data, size);
+    vkUnmapMemory(device, buffer->mem);
+  }
 }
-
 
 static VkShaderModule vknvg_createShaderModule(VkDevice device, const void *code, size_t size, const VkAllocationCallbacks *allocator) {
 
@@ -1041,7 +1036,7 @@ static void vknvg_stroke(VKNVGcontext *vk, VKNVGcall *call) {
     pipelinekey.compositOperation = call->compositOperation;
     pipelinekey.stencilFill = false;
     pipelinekey.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-	pipelinekey.edgeAAShader = vk->flags & NVG_ANTIALIAS;
+    pipelinekey.edgeAAShader = vk->flags & NVG_ANTIALIAS;
     vknvg_bindPipeline(vk, cmdBuffer, &pipelinekey);
 
     for (int i = 0; i < npaths; ++i) {
@@ -1063,7 +1058,7 @@ static void vknvg_stroke(VKNVGcontext *vk, VKNVGcall *call) {
     pipelinekey.stencilFill = true;
     pipelinekey.stencilTest = true;
     pipelinekey.edgeAAShader = false;
-	pipelinekey.edgeAA = false;
+    pipelinekey.edgeAA = false;
     for (int i = 0; i < npaths; ++i) {
       const VkDeviceSize offsets[1] = {paths[i].strokeOffset * sizeof(NVGvertex)};
       vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vk->vertexBuffer.buffer, offsets);
@@ -1075,7 +1070,7 @@ static void vknvg_stroke(VKNVGcontext *vk, VKNVGcall *call) {
     pipelinekey.compositOperation = call->compositOperation;
     pipelinekey.stencilFill = false;
     pipelinekey.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-	pipelinekey.edgeAAShader = vk->flags & NVG_ANTIALIAS;
+    pipelinekey.edgeAAShader = vk->flags & NVG_ANTIALIAS;
 
     vknvg_bindPipeline(vk, cmdBuffer, &pipelinekey);
     VkDescriptorSetAllocateInfo alloc_info[1] = {
@@ -1613,7 +1608,6 @@ error:
 void nvgDeleteVk(NVGcontext *ctx) {
   nvgDeleteInternal(ctx);
 }
-
 
 #if !defined(__cplusplus) || defined(NANOVG_VK_NO_nullptrPTR)
 #undef nullptr
