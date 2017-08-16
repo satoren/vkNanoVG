@@ -35,5 +35,26 @@ add_executable(example_vulkan example_vulkan.c ${NANOVG_SOURCE_DIR}/example/demo
 target_link_libraries(example_vulkan glfw nanovg ${Vulkan_LIBRARIES})
 
 
+add_executable(benchmark_vulkan benchmark_vulkan.c ${NANOVG_SOURCE_DIR}/example/demo.c ${NANOVG_SOURCE_DIR}/example/perf.c)
+target_link_libraries(benchmark_vulkan glfw nanovg ${Vulkan_LIBRARIES})
+
+
 add_executable(example_vulkancpp example_vulkancpp.cpp ${NANOVG_SOURCE_DIR}/example/demo.c ${NANOVG_SOURCE_DIR}/example/perf.c)
 target_link_libraries(example_vulkancpp glfw nanovg ${Vulkan_LIBRARIES})
+
+if(BUILD_OPNENGL_BENCHMARK)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/glew-2.1.0/lib/Release/x64/)
+
+add_executable(benchmark_gl3 benchmark_gl2.c ${NANOVG_SOURCE_DIR}/example/demo.c ${NANOVG_SOURCE_DIR}/example/perf.c)
+target_link_libraries(benchmark_gl3 glfw nanovg )
+target_compile_definitions(benchmark_gl3 PRIVATE NANOVG_GLEW GLFW_INCLUDE_NONE)
+target_include_directories(benchmark_gl3 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glew-2.1.0/include)
+target_link_libraries(benchmark_gl3 glew32 opengl32)
+
+
+add_executable(benchmark_gl2 benchmark_gl2.c ${NANOVG_SOURCE_DIR}/example/demo.c ${NANOVG_SOURCE_DIR}/example/perf.c)
+target_link_libraries(benchmark_gl2 glfw nanovg )
+target_compile_definitions(benchmark_gl2 PRIVATE NANOVG_GLEW GLFW_INCLUDE_NONE)
+target_include_directories(benchmark_gl2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glew-2.1.0/include)
+target_link_libraries(benchmark_gl2 glew32 opengl32)
+endif(BUILD_OPNENGL_BENCHMARK)
