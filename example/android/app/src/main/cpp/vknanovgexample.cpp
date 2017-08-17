@@ -404,7 +404,7 @@ void CreateExampleData() {
   create_info.device = device.device_;
   create_info.gpu = device.gpuDevice_;
   create_info.renderpass = render.renderPass_;
-  create_info.cmd_buffer = render.cmdBuffer_[0];
+  create_info.cmdBuffer = render.cmdBuffer_[0];
 
   exampleData.vg = nvgCreateVk(create_info, NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 
